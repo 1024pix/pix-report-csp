@@ -1,0 +1,27 @@
+log_format CSP escape=none $request_body;
+
+server {
+  listen <%= ENV['PORT'] %>;
+  access_log logs/access.log CSP;
+
+  client_max_body_size 4k;
+
+  location = / {
+    limit_except POST { 
+      deny all; 
+    }
+    if ($http_content_type != "application/csp-report") {
+      return 403;
+    } 
+    proxy_pass http://127.0.0.1:81/;
+  }
+}
+
+server {
+  listen 81;
+
+  location / {
+    access_log off;
+    return 204;
+  }
+}
