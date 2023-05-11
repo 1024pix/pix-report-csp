@@ -14,7 +14,7 @@ server {
     if ($http_content_type != "application/csp-report") {
       return 403;
     } 
-    set $logme 1;`
+    set $logme 1;
     proxy_pass http://127.0.0.1:3000/;
   }
 }
