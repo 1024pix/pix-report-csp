@@ -1,0 +1,19 @@
+@startuml
+actor utilisateur
+participant application
+participant navigateur
+participant API
+participant csp_report_logger
+participant fs
+participant datadog
+
+utilisateur -> application: clic dans une fenêtre de app.pix.fr
+application -> navigateur: GET pix.fr/api/foo
+navigateur -> API: GET pix.fr/api/foo
+API -> navigateur: <HEADERS> \ncontent-security-policy-report-only: default-src 'self';\n style-src 'self' \n'unsafe-inline' https://fonts.googleapis.com; \nimg-src 'self' https: data:; \nfont-src https://fonts.gstatic.com; \nframe-src epreuves.pix.fr 1024pix.github.io; \nreport-uri <URL_CSP_REPORT_LOGGER>\n <PAYLOAD>
+navigateur -> application: <PAYLOAD>
+application -> navigateur: appel de analytics.pix.fr (non autorisé)
+navigateur -> csp_report_logger: <HEADERS>\nPOST / \nhttp_content_type = "application/csp-report" \n<PAYLOAD>
+csp_report_logger -> fs: écriture dans logs/access.log
+fs -> datadog: LOG_DRAIN Scalingo \n csp-report : { \n   blocked-uri: https://analytics.pix.fr/piwik.php, \n document-uri: app.pix.fr/bar \n}
+@enduml

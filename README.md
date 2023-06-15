@@ -5,7 +5,7 @@ Pour cela, nous avons créé un nginx, permettant de logger tous les reports qui
 
 ## Comment ça marche ? 
 
-Les CSP mis en place sur d'autres applications, reportent vers ce serveur nginx. A l'aide de la directive : `report-uri`. 
+Les CSP mis en place sur d'autres applications reportent vers ce serveur nginx à l'aide de la directive : `report-uri`. 
 
 ### Le format des logs 
 
@@ -14,12 +14,10 @@ Nous loggons directement, le request body au type JSON grâce au `escape=none`.
 ```conf
 log_format CSP escape=none $request_body;
 ```
-
-
 Le premier serveur nginx : 
 1. Ecoute sur le port passé en environnement. 
-2. Log seulement les requêtes type CSP sur l'uri `/`.
-3. Envoie la requête sur un second serveur, car le fonctionnement de [nginx fait en sorte de logger que les requêtes traitées](https://docs.nginx.com/nginx/admin-guide/monitoring/logging/#setting-up-the-access-log).
+2. Logue seulement les requêtes type CSP sur l'uri `/`.
+3. Envoie la requête sur un second serveur, car le fonctionnement de [nginx fait en sorte de ne logger que les requêtes traitées](https://docs.nginx.com/nginx/admin-guide/monitoring/logging/#setting-up-the-access-log).
 
 ```erb
 server {
@@ -42,10 +40,8 @@ server {
 }
 ```
 
-Le système de log de nginx, log seulement les requêtes traitées.
 
-
-### Les sécurités mise en place pour éviter d'être spamer par des fausses requêtes 
+### Les sécurités mise en place pour éviter d'être spammé par des fausses requêtes 
 
 1. Le serveur n'accepte pas de requêtes de plus de 4k. 
 ```conf
@@ -54,8 +50,9 @@ client_max_body_size 4k;
 
 2. Le serveur n'accepte que les requêtes POST sur l'uri `/` et avec le `Content-type: application/csp-report`
 
-3. Le serveur ne log que les requêtes qui répondent à nos critères grâce à la variable `set $logme 0;`
-et la condition : `access_log logs/access.log CSP if=$logme;`
+3. Le serveur ne loggue que les requêtes qui répondent à nos critères grâce à: 
+   - la variable `set $logme 0;`
+   - la condition `access_log logs/access.log CSP if=$logme;`
 
 ## Comment tester en local ? 
 
@@ -77,14 +74,14 @@ PORT=80 HAS_SERVER_CONF=true erb ./config/nginx.conf.erb > nginx.conf \
 && docker run --rm -ti -v $PWD/nginx.conf:/etc/nginx/nginx.conf:ro -v $PWD/servers.conf:/etc/nginx/servers.conf:ro  --tmpfs /etc/nginx/logs -p 9000:80 nginx nginx
 ```
 
-5. Dans un second terminal, vous pouvez tester différentes requêtes : 
+5. Dans un second terminal, tester différentes requêtes : 
 
 ```shell
 http -v --form :9000/ x=1
 http -v POST :9000/ Content-type:application/csp-report
 ```
 
-6. Pour voir les logs : 
+6. Voir les logs : 
 
 ```shell
 docker exec $(docker ps -lq) cat /etc/nginx/logs/access.log
